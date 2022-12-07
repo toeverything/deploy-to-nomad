@@ -89,6 +89,25 @@ run();
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -100,6 +119,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.createOrRunJob = void 0;
+const core = __importStar(__nccwpck_require__(2186));
 const request_1 = __nccwpck_require__(1971);
 function listJobs() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -107,6 +127,7 @@ function listJobs() {
             url: '/v1/jobs',
             method: 'GET'
         });
+        core.debug(`list jobs:\n${JSON.stringify(jobs.data, null, 2)}\n${JSON.stringify(jobs.headers, null, 2)}`);
         return jobs.data.map(job => job.ID);
     });
 }
@@ -116,6 +137,7 @@ function getJobInfo(jobId) {
             url: `/v1/job/${jobId}`,
             method: 'GET'
         })).data;
+        core.debug(`get job info: ${JSON.stringify(jobInfo, null, 2)}`);
         const ports = jobInfo.TaskGroups.reduce((acc, group) => {
             for (const network of group.Networks) {
                 for (const reservedPort of network.ReservedPorts) {
@@ -206,6 +228,7 @@ function parseHCLtoJobJSON(options) {
                 JobHCL: hcl
             }
         })).data;
+        core.debug(`job json: ${JSON.stringify(jobJSON, null, 2)}`);
         return jobJSON;
     });
 }
@@ -218,6 +241,7 @@ function runJob(jobJSON) {
                 Job: jobJSON
             }
         })).data;
+        core.debug(`run job: ${JSON.stringify(ran, null, 2)}`);
         return ran;
     });
 }
@@ -226,11 +250,13 @@ function createOrRunJob(options) {
         const jobsInfo = yield getAllJobs();
         const found = jobsInfo.find(jobInfo => {
             if (jobInfo.id === options.id &&
-                !jobInfo.ports.includes(options.staticPort)) {
+                !jobInfo.ports.includes(Number(options.staticPort))) {
+                core.debug(`state 1: \n${JSON.stringify(jobInfo, null, 2)}\n${JSON.stringify(options, null, 2)}`);
                 return true;
             }
             if (jobInfo.id !== options.id &&
-                jobInfo.ports.includes(options.staticPort)) {
+                jobInfo.ports.includes(Number(options.staticPort))) {
+                core.debug(`state 2: \n${JSON.stringify(jobInfo, null, 2)}\n${JSON.stringify(options, null, 2)}`);
                 return true;
             }
         });
@@ -265,6 +291,8 @@ const axios_1 = __importDefault(__nccwpck_require__(1441));
 exports.request = axios_1.default.create();
 function configRequest(options) {
     exports.request.defaults.baseURL = `https://${options.nomadDomain}`;
+    exports.request.defaults.headers["Accept-Encoding"] = 'application/json';
+    exports.request.defaults.headers["Content-Type"] = 'application/json; charset=utf-8';
     exports.request.defaults.headers["x-nomad-token"] = options.nomadACL;
     exports.request.defaults.headers["CF-Access-Client-Id"] = options.cfClientId;
     exports.request.defaults.headers["CF-Access-Client-Secret"] = options.cfClientSecret;

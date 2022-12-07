@@ -2,6 +2,24 @@
 
 This action will deploy docker image to nomad.
 
+## Usage
+
+You can now use the action like following code.
+
+```yaml
+uses: toeverything/deploy-to-nomad@main
+env:
+  nomad-acl: ${{secrets.NOMAD_ACL_TOKEN}}
+  cf-access-client-id: ${{secrets.CF_ACCESS_CLIENT_ID}}
+  cf-access-client-secret: ${{secrets.CF_ACCESS_CLIENT_SECRET}}
+with:
+  nomad-domain: 'nomad-dev.affine.systems'
+  job-id: 'Your job id & name'
+  image-url: 'ghcr.io/toeverything/blocksuite-icons-preview:nightly-latest'
+  static-port: 10022
+  container-port: 3000
+```
+
 ## Code in Main
 
 > First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
@@ -57,19 +75,3 @@ Note: We recommend using the `--license` option for ncc, which will create a lic
 Your action is now published! :rocket:
 
 See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
-
-```yaml
-uses: ./
-with:
-  milliseconds: 1000
-```
-
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
-
-## Usage:
-
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action

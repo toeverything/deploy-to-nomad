@@ -1,3 +1,4 @@
+import * as core from '@actions/core'
 import {request} from './request'
 
 async function listJobs(): Promise<string[]> {
@@ -5,6 +6,14 @@ async function listJobs(): Promise<string[]> {
     url: '/v1/jobs',
     method: 'GET'
   })
+
+  core.debug(
+    `list jobs:\n${JSON.stringify(jobs.data, null, 2)}\n${JSON.stringify(
+      jobs.headers,
+      null,
+      2
+    )}`
+  )
 
   return jobs.data.map(job => job.ID)
 }
@@ -15,7 +24,7 @@ interface JobInfoResponse {
   TaskGroups: {
     Networks: {
       ReservedPorts: {
-        Value: string
+        Value: number
       }[]
     }[]
   }[]
@@ -23,7 +32,7 @@ interface JobInfoResponse {
 interface JobInfo {
   id: string
   name: string
-  ports: string[]
+  ports: number[]
 }
 async function getJobInfo(jobId: string): Promise<JobInfo> {
   const jobInfo = (
@@ -33,6 +42,8 @@ async function getJobInfo(jobId: string): Promise<JobInfo> {
     })
   ).data
 
+  core.debug(`get job info: ${JSON.stringify(jobInfo, null, 2)}`)
+
   const ports = jobInfo.TaskGroups.reduce((acc, group) => {
     for (const network of group.Networks) {
       for (const reservedPort of network.ReservedPorts) {
@@ -40,7 +51,7 @@ async function getJobInfo(jobId: string): Promise<JobInfo> {
       }
     }
     return acc
-  }, [] as string[]).filter(port => !!port)
+  }, [] as number[]).filter(port => !!port)
 
   return {
     id: jobInfo.ID,
@@ -138,6 +149,8 @@ async function parseHCLtoJobJSON(
       }
     })
   ).data
+
+  core.debug(`job json: ${JSON.stringify(jobJSON, null, 2)}`)
   return jobJSON
 }
 
@@ -152,6 +165,8 @@ async function runJob(jobJSON: JobJSON): Promise<unknown> {
     })
   ).data
 
+  core.debug(`run job: ${JSON.stringify(ran, null, 2)}`)
+
   return ran
 }
 
@@ -162,14 +177,28 @@ export async function createOrRunJob(
   const found = jobsInfo.find(jobInfo => {
     if (
       jobInfo.id === options.id &&
-      !jobInfo.ports.includes(options.staticPort)
+      !jobInfo.ports.includes(Number(options.staticPort))
     ) {
+      core.debug(
+        `state 1: \n${JSON.stringify(jobInfo, null, 2)}\n${JSON.stringify(
+          options,
+          null,
+          2
+        )}`
+      )
       return true
     }
     if (
       jobInfo.id !== options.id &&
-      jobInfo.ports.includes(options.staticPort)
+      jobInfo.ports.includes(Number(options.staticPort))
     ) {
+      core.debug(
+        `state 2: \n${JSON.stringify(jobInfo, null, 2)}\n${JSON.stringify(
+          options,
+          null,
+          2
+        )}`
+      )
       return true
     }
   })
