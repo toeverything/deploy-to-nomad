@@ -1,11 +1,23 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Deploy to Nomad'
+description: 'Deploy docker image to nomad.'
+author: 'Toeverything'
 inputs:
-  milliseconds: # change this
+  job-id:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'Job id'
+  image-url:
+    required: true
+    description: 'Docker image url'
+  static-port:
+    required: true
+    description: 'Static port'
+  container-port:
+    required: true
+    description: 'Container port'
+  nomad-domain:
+    required: true
+    description: 'Nomad domain'
+
 runs:
   using: 'node16'
   main: 'dist/index.js'
